@@ -20,7 +20,7 @@ class ValidatorGenerator extends Generator {
       for (final field in clazz.fields) {
         final fieldName = field.name;
 
-        for (final meta in field.metadata) {
+        for (final meta in field.metadata.toSet()) {
           final value = meta.computeConstantValue();
           final type = value?.type?.getDisplayString(withNullability: false);
 
