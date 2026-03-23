@@ -43,6 +43,13 @@ class ValidatorGenerator extends Generator {
 
         for (final field in clazz.fields) {
           final fieldName = field.name;
+          final fieldType = field.type.getDisplayString();
+          final isNullable = fieldType.endsWith('?');
+
+          // Declare local variable for nullable fields once
+          if (isNullable) {
+            buffer.writeln('    final \$${fieldName}Value = $fieldName;');
+          }
 
           for (final meta in field.metadata.annotations) {
             final value = meta.computeConstantValue();
@@ -54,11 +61,19 @@ class ValidatorGenerator extends Generator {
                 final message = value?.getField('message')?.toStringValue() ??
                     '$fieldName cannot be empty';
 
-                buffer.writeln('''
-if ($fieldName.isEmpty) {
-  errors.add('$message');
-}
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && \$${fieldName}Value.isEmpty) {
+      errors.add('$message');
+    }
 ''');
+                } else {
+                  buffer.writeln('''
+    if ($fieldName.isEmpty) {
+      errors.add('$message');
+    }
+''');
+                }
                 break;
 
               /// ===== Length =====
@@ -68,19 +83,35 @@ if ($fieldName.isEmpty) {
                 final message = value?.getField('message')?.toStringValue();
 
                 if (min != null) {
-                  buffer.writeln('''
-if ($fieldName.length < $min) {
-  errors.add('${message ?? '$fieldName min length is $min'}');
-}
+                  if (isNullable) {
+                    buffer.writeln('''
+    if (\$${fieldName}Value != null && \$${fieldName}Value.length < $min) {
+      errors.add('${message ?? '$fieldName min length is $min'}');
+    }
 ''');
+                  } else {
+                    buffer.writeln('''
+    if ($fieldName.length < $min) {
+      errors.add('${message ?? '$fieldName min length is $min'}');
+    }
+''');
+                  }
                 }
 
                 if (max != null) {
-                  buffer.writeln('''
-if ($fieldName.length > $max) {
-  errors.add('${message ?? '$fieldName max length is $max'}');
-}
+                  if (isNullable) {
+                    buffer.writeln('''
+    if (\$${fieldName}Value != null && \$${fieldName}Value.length > $max) {
+      errors.add('${message ?? '$fieldName max length is $max'}');
+    }
 ''');
+                  } else {
+                    buffer.writeln('''
+    if ($fieldName.length > $max) {
+      errors.add('${message ?? '$fieldName max length is $max'}');
+    }
+''');
+                  }
                 }
                 break;
 
@@ -89,11 +120,19 @@ if ($fieldName.length > $max) {
                 final message = value?.getField('message')?.toStringValue() ??
                     '$fieldName is not a valid email';
 
-                buffer.writeln('''
-if (!RegExp(r'^[^@]+@[^@]+\\.[^@]+\$').hasMatch($fieldName)) {
-  errors.add('$message');
-}
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && !RegExp(r'^[^@]+@[^@]+\\.[^@]+\$').hasMatch(\$${fieldName}Value)) {
+      errors.add('$message');
+    }
 ''');
+                } else {
+                  buffer.writeln('''
+    if (!RegExp(r'^[^@]+@[^@]+\\.[^@]+\$').hasMatch($fieldName)) {
+      errors.add('$message');
+    }
+''');
+                }
                 break;
 
               /// ===== Url =====
@@ -101,11 +140,19 @@ if (!RegExp(r'^[^@]+@[^@]+\\.[^@]+\$').hasMatch($fieldName)) {
                 final message = value?.getField('message')?.toStringValue() ??
                     '$fieldName is not a valid url';
 
-                buffer.writeln('''
-if (Uri.tryParse($fieldName) == null) {
-  errors.add('$message');
-}
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && Uri.tryParse(\$${fieldName}Value) == null) {
+      errors.add('$message');
+    }
 ''');
+                } else {
+                  buffer.writeln('''
+    if (Uri.tryParse($fieldName) == null) {
+      errors.add('$message');
+    }
+''');
+                }
                 break;
             }
           }

@@ -11,16 +11,23 @@ import 'user.dart';
 extension UserValidator on User {
   List<String> validate() {
     final errors = <String>[];
-    if (name.isEmpty) {
+    final $nameValue = name;
+    if ($nameValue != null && $nameValue.isEmpty) {
       errors.add('name cannot be empty');
     }
 
-    if (name.length < 2) {
+    if ($nameValue != null && $nameValue.length < 2) {
       errors.add('name must be between 2 and 20 characters');
     }
 
-    if (name.length > 20) {
+    if ($nameValue != null && $nameValue.length > 20) {
       errors.add('name must be between 2 and 20 characters');
+    }
+
+    final $emailValue = email;
+    if ($emailValue != null &&
+        !RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch($emailValue)) {
+      errors.add('email must be valid');
     }
 
     if (Uri.tryParse(apiBaseUrl) == null) {
