@@ -1,0 +1,13 @@
+targets:
+  $default:
+    builders:
+      schema_valid:
+        generate_for:
+          - example/**.dart   # ✅ 只生成示例
+builders:
+  schema_valid:
+    import: "package:schema_valid/src/builder.dart"
+    builder_factories: ["validatorBuilder"]
+    build_extensions: {".dart": [".validator.dart"]}
+    auto_apply: dependents
+    build_to: source
