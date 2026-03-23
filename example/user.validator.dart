@@ -30,6 +30,10 @@ extension UserValidator on User {
       errors.add('apiBaseUrl cannot be empty');
     }
 
+    if (apiBaseUrl.length < 1) {
+      errors.add('apiBaseUrl cannot be empty');
+    }
+
     return errors;
   }
 
