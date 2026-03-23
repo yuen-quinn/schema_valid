@@ -20,7 +20,22 @@ class ValidatorGenerator extends Generator {
           if (type == 'NotEmpty' ||
               type == 'Length' ||
               type == 'Email' ||
-              type == 'Url') {
+              type == 'Url' ||
+              type == 'Min' ||
+              type == 'Max' ||
+              type == 'Range' ||
+              type == 'Pattern' ||
+              type == 'Positive' ||
+              type == 'Negative' ||
+              type == 'CreditCard' ||
+              type == 'Phone' ||
+              type == 'UUID' ||
+              type == 'Alpha' ||
+              type == 'AlphaNumeric' ||
+              type == 'Required' ||
+              type == 'Contains' ||
+              type == 'StartsWith' ||
+              type == 'EndsWith') {
             hasValidationAnnotations = true;
 
             break;
@@ -150,6 +165,307 @@ class ValidatorGenerator extends Generator {
                   buffer.writeln('''
     if (Uri.tryParse($fieldName) == null) {
       errors.add('$message');
+    }
+''');
+                }
+                break;
+
+              /// ===== Min =====
+              case 'Min':
+                final minValue = value?.getField('value')?.toDoubleValue();
+                final message = value?.getField('message')?.toStringValue();
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && \$${fieldName}Value < ${minValue ?? 0}) {
+      errors.add('${message ?? '$fieldName must be at least ${minValue ?? 0}'}');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if ($fieldName < ${minValue ?? 0}) {
+      errors.add('${message ?? '$fieldName must be at least ${minValue ?? 0}'}');
+    }
+''');
+                }
+                break;
+
+              /// ===== Max =====
+              case 'Max':
+                final maxValue = value?.getField('value')?.toDoubleValue();
+                final message = value?.getField('message')?.toStringValue();
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && \$${fieldName}Value > ${maxValue ?? 0}) {
+      errors.add('${message ?? '$fieldName must be at most ${maxValue ?? 0}'}');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if ($fieldName > ${maxValue ?? 0}) {
+      errors.add('${message ?? '$fieldName must be at most ${maxValue ?? 0}'}');
+    }
+''');
+                }
+                break;
+
+              /// ===== Range =====
+              case 'Range':
+                final rangeMin = value?.getField('min')?.toDoubleValue();
+                final rangeMax = value?.getField('max')?.toDoubleValue();
+                final message = value?.getField('message')?.toStringValue();
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && (\$${fieldName}Value < ${rangeMin ?? 0} || \$${fieldName}Value > ${rangeMax ?? 0})) {
+      errors.add('${message ?? '$fieldName must be between ${rangeMin ?? 0} and ${rangeMax ?? 0}'}');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if ($fieldName < ${rangeMin ?? 0} || $fieldName > ${rangeMax ?? 0}) {
+      errors.add('${message ?? '$fieldName must be between ${rangeMin ?? 0} and ${rangeMax ?? 0}'}');
+    }
+''');
+                }
+                break;
+
+              /// ===== Pattern =====
+              case 'Pattern':
+                final regex = value?.getField('regex')?.toStringValue() ?? '';
+                final message = value?.getField('message')?.toStringValue();
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && !RegExp(r'$regex').hasMatch(\$${fieldName}Value)) {
+      errors.add('${message ?? '$fieldName does not match pattern'}');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if (!RegExp(r'$regex').hasMatch($fieldName)) {
+      errors.add('${message ?? '$fieldName does not match pattern'}');
+    }
+''');
+                }
+                break;
+
+              /// ===== Positive =====
+              case 'Positive':
+                final message = value?.getField('message')?.toStringValue() ??
+                    '$fieldName must be positive';
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && \$${fieldName}Value <= 0) {
+      errors.add('$message');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if ($fieldName <= 0) {
+      errors.add('$message');
+    }
+''');
+                }
+                break;
+
+              /// ===== Negative =====
+              case 'Negative':
+                final message = value?.getField('message')?.toStringValue() ??
+                    '$fieldName must be negative';
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && \$${fieldName}Value >= 0) {
+      errors.add('$message');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if ($fieldName >= 0) {
+      errors.add('$message');
+    }
+''');
+                }
+                break;
+
+              /// ===== CreditCard =====
+              case 'CreditCard':
+                final message = value?.getField('message')?.toStringValue() ??
+                    '$fieldName is not a valid credit card number';
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && !RegExp(r'^[0-9]{13,19}\$').hasMatch(\$${fieldName}Value.replaceAll(RegExp(r'\\s'), ''))) {
+      errors.add('$message');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if (!RegExp(r'^[0-9]{13,19}\$').hasMatch($fieldName.replaceAll(RegExp(r'\\s'), ''))) {
+      errors.add('$message');
+    }
+''');
+                }
+                break;
+
+              /// ===== Phone =====
+              case 'Phone':
+                final message = value?.getField('message')?.toStringValue() ??
+                    '$fieldName is not a valid phone number';
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && !RegExp(r'^\\+?[1-9]\\d{1,14}\$').hasMatch(\$${fieldName}Value.replaceAll(RegExp(r'[\\s\\-\\(\\)]'), ''))) {
+      errors.add('$message');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if (!RegExp(r'^\\+?[1-9]\\d{1,14}\$').hasMatch($fieldName.replaceAll(RegExp(r'[\\s\\-\\(\\)]'), ''))) {
+      errors.add('$message');
+    }
+''');
+                }
+                break;
+
+              /// ===== UUID =====
+              case 'UUID':
+                final message = value?.getField('message')?.toStringValue() ??
+                    '$fieldName is not a valid UUID';
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && !RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\$').hasMatch(\$${fieldName}Value)) {
+      errors.add('$message');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if (!RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\$').hasMatch($fieldName)) {
+      errors.add('$message');
+    }
+''');
+                }
+                break;
+
+              /// ===== Alpha =====
+              case 'Alpha':
+                final message = value?.getField('message')?.toStringValue() ??
+                    '$fieldName must contain only letters';
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && !RegExp(r'^[a-zA-Z]+\$').hasMatch(\$${fieldName}Value)) {
+      errors.add('$message');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if (!RegExp(r'^[a-zA-Z]+\$').hasMatch($fieldName)) {
+      errors.add('$message');
+    }
+''');
+                }
+                break;
+
+              /// ===== AlphaNumeric =====
+              case 'AlphaNumeric':
+                final message = value?.getField('message')?.toStringValue() ??
+                    '$fieldName must contain only letters and numbers';
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && !RegExp(r'^[a-zA-Z0-9]+\$').hasMatch(\$${fieldName}Value)) {
+      errors.add('$message');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if (!RegExp(r'^[a-zA-Z0-9]+\$').hasMatch($fieldName)) {
+      errors.add('$message');
+    }
+''');
+                }
+                break;
+
+              /// ===== Required =====
+              case 'Required':
+                final message = value?.getField('message')?.toStringValue() ??
+                    '$fieldName is required';
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value == null) {
+      errors.add('$message');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if ($fieldName == null) {
+      errors.add('$message');
+    }
+''');
+                }
+                break;
+
+              /// ===== Contains =====
+              case 'Contains':
+                final substring = value?.getField('substring')?.toStringValue() ?? '';
+                final message = value?.getField('message')?.toStringValue();
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && !\$${fieldName}Value.contains('$substring')) {
+      errors.add('${message ?? '$fieldName must contain \"$substring\"'}');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if (!$fieldName.contains('$substring')) {
+      errors.add('${message ?? '$fieldName must contain \"$substring\"'}');
+    }
+''');
+                }
+                break;
+
+              /// ===== StartsWith =====
+              case 'StartsWith':
+                final prefix = value?.getField('prefix')?.toStringValue() ?? '';
+                final message = value?.getField('message')?.toStringValue();
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && !\$${fieldName}Value.startsWith('$prefix')) {
+      errors.add('${message ?? '$fieldName must start with \"$prefix\"'}');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if (!$fieldName.startsWith('$prefix')) {
+      errors.add('${message ?? '$fieldName must start with \"$prefix\"'}');
+    }
+''');
+                }
+                break;
+
+              /// ===== EndsWith =====
+              case 'EndsWith':
+                final suffix = value?.getField('suffix')?.toStringValue() ?? '';
+                final message = value?.getField('message')?.toStringValue();
+
+                if (isNullable) {
+                  buffer.writeln('''
+    if (\$${fieldName}Value != null && !\$${fieldName}Value.endsWith('$suffix')) {
+      errors.add('${message ?? '$fieldName must end with \"$suffix\"'}');
+    }
+''');
+                } else {
+                  buffer.writeln('''
+    if (!$fieldName.endsWith('$suffix')) {
+      errors.add('${message ?? '$fieldName must end with \"$suffix\"'}');
     }
 ''');
                 }
