@@ -5,16 +5,23 @@ class ValidatorGenerator extends Generator {
   @override
   Future<String> generate(LibraryReader library, BuildStep buildStep) async {
     final buffer = StringBuffer();
+    
+    // Add imports once at the top
+    buffer.writeln("import 'package:schema_valid/schema_valid.dart';");
+    buffer.writeln("import '${buildStep.inputId.uri.pathSegments.last}';");
+    buffer.writeln();
 
     for (final clazz in library.classes) {
-// 检查类是否有验证注解
-
+      // 检查类是否有验证注解
       bool hasValidationAnnotations = false;
+      final fieldsWithValidations = <String>{};
 
       for (final field in clazz.fields) {
+        if (field.name == null) continue;
+        
+        bool fieldHasValidations = false;
         for (final meta in field.metadata.annotations) {
           final value = meta.computeConstantValue();
-
           final type = value?.type?.getDisplayString();
 
           if (type == 'NotEmpty' ||
@@ -37,19 +44,16 @@ class ValidatorGenerator extends Generator {
               type == 'StartsWith' ||
               type == 'EndsWith') {
             hasValidationAnnotations = true;
-
-            break;
+            fieldHasValidations = true;
           }
         }
-
-        if (hasValidationAnnotations) break;
+        if (fieldHasValidations) {
+          fieldsWithValidations.add(field.name!);
+        }
       }
 
       if (hasValidationAnnotations) {
         final className = clazz.name;
-        buffer.writeln("import 'package:schema_valid/schema_valid.dart';");
-        buffer.writeln("import '${buildStep.inputId.uri.pathSegments.last}';");
-
         buffer.writeln('extension ${className}Validator on $className {');
 
         /// validate()
@@ -58,11 +62,13 @@ class ValidatorGenerator extends Generator {
 
         for (final field in clazz.fields) {
           final fieldName = field.name;
+          if (fieldName == null) continue;
+          
           final fieldType = field.type.getDisplayString();
           final isNullable = fieldType.endsWith('?');
-
-          // Declare local variable for nullable fields once
-          if (isNullable) {
+          
+          // Only declare local variable if field has validations and is nullable
+          if (isNullable && fieldsWithValidations.contains(fieldName)) {
             buffer.writeln('    final \$${fieldName}Value = $fieldName;');
           }
 
@@ -403,11 +409,9 @@ class ValidatorGenerator extends Generator {
     }
 ''');
                 } else {
-                  buffer.writeln('''
-    if ($fieldName == null) {
-      errors.add('$message');
-    }
-''');
+                  // For non-nullable fields, Required annotation is redundant
+                  // since the type system already ensures non-null values
+                  // We can skip the null check for non-nullable fields
                 }
                 break;
 

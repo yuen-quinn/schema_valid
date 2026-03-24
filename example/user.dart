@@ -2,6 +2,15 @@ import 'package:schema_valid/schema_valid.dart';
 
 import 'user.validator.dart';
 
+
+class User1{
+  @Required(message: 'name is required')
+  @NotEmpty()
+  final String name;
+  final String email;
+  User1(this.name, this.email);
+}
+
 class User {
   @Required(message: 'name is required')
   @NotEmpty(message: 'name cannot be empty')

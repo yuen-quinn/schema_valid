@@ -8,6 +8,24 @@
 import 'package:schema_valid/schema_valid.dart';
 import 'user.dart';
 
+extension User1Validator on User1 {
+  List<String> validate() {
+    final errors = <String>[];
+    if (name.isEmpty) {
+      errors.add('name cannot be empty');
+    }
+
+    return errors;
+  }
+
+  void validateOrThrow() {
+    final errors = validate();
+    if (errors.isNotEmpty) {
+      throw ValidationException(errors.join(', '));
+    }
+  }
+}
+
 extension UserValidator on User {
   List<String> validate() {
     final errors = <String>[];
