@@ -5,11 +5,7 @@ class ValidatorGenerator extends Generator {
   @override
   Future<String> generate(LibraryReader library, BuildStep buildStep) async {
     final buffer = StringBuffer();
-    
-    // Add imports once at the top
-    buffer.writeln("import 'package:schema_valid/schema_valid.dart';");
-    buffer.writeln("import '${buildStep.inputId.uri.pathSegments.last}';");
-    buffer.writeln();
+    bool hasAnyValidationAnnotations = false;
 
     for (final clazz in library.classes) {
       // 检查类是否有验证注解
@@ -44,6 +40,7 @@ class ValidatorGenerator extends Generator {
               type == 'StartsWith' ||
               type == 'EndsWith') {
             hasValidationAnnotations = true;
+            hasAnyValidationAnnotations = true;
             fieldHasValidations = true;
           }
         }
@@ -494,6 +491,19 @@ class ValidatorGenerator extends Generator {
         buffer.writeln('}');
       }
     }
-    return buffer.toString();
+
+    // 只有当至少有一个类包含验证注解时才返回内容
+    if (hasAnyValidationAnnotations) {
+      // Add imports at the top
+      final finalBuffer = StringBuffer();
+      finalBuffer.writeln("import 'package:schema_valid/schema_valid.dart';");
+      finalBuffer.writeln("import '${buildStep.inputId.uri.pathSegments.last}';");
+      finalBuffer.writeln();
+      finalBuffer.write(buffer.toString());
+      return finalBuffer.toString();
+    } else {
+      // 没有验证注解，返回空字符串，不生成文件
+      return '';
+    }
   }
 }
